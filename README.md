@@ -73,7 +73,7 @@ Tarayıcıda `http://localhost:5000` adresini aç.
 
 ## 📸 Ekran Görüntüsü
 
-> 
+> ![Dashboard](Screenshot%202026-04-22%20150250.jpg)
 
 ## 👤 Geliştirici
 
