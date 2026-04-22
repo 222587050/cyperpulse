@@ -73,7 +73,7 @@ Tarayıcıda `http://localhost:5000` adresini aç.
 
 ## 📸 Ekran Görüntüsü
 
-> Dashboard ekran görüntüsü eklenecek
+> 
 
 ## 👤 Geliştirici
 
