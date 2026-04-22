@@ -1,0 +1,10 @@
+flask
+pandas
+numpy
+scikit-learn
+httpx
+requests
+anthropic
+sqlite3
+python-dotenv
+reportlab

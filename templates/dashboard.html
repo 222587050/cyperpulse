@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CyberPulse AI</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { background: #0a0e1a; color: #e0e6ff; font-family: 'Segoe UI', sans-serif; }
+
+        header {
+            background: #0d1224;
+            border-bottom: 1px solid #1e3a5f;
+            padding: 16px 32px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        header h1 { font-size: 22px; color: #4fc3f7; letter-spacing: 2px; }
+        header span { font-size: 12px; color: #4caf50; }
+
+        .grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr 1fr;
+            gap: 16px;
+            padding: 24px 32px 0;
+        }
+        .card {
+            background: #0d1224;
+            border: 1px solid #1e3a5f;
+            border-radius: 10px;
+            padding: 20px;
+        }
+        .card h3 { font-size: 12px; color: #7986cb; margin-bottom: 8px; text-transform: uppercase; }
+        .card .value { font-size: 32px; font-weight: bold; color: #4fc3f7; }
+        .card .value.red { color: #ef5350; }
+        .card .value.yellow { color: #ffb300; }
+        .card .value.green { color: #4caf50; }
+
+        .main-grid {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 16px;
+            padding: 16px 32px;
+        }
+
+        .threat-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+        .threat-table th { color: #7986cb; font-weight: 500; padding: 10px; text-align: left; border-bottom: 1px solid #1e3a5f; }
+        .threat-table td { padding: 10px; border-bottom: 1px solid #0d1224; }
+        .threat-table tr:hover { background: #111827; }
+
+        .badge { padding: 3px 10px; border-radius: 20px; font-size: 11px; font-weight: bold; }
+        .badge.kritik { background: #2d1515; color: #ef5350; }
+        .badge.orta { background: #2d2200; color: #ffb300; }
+        .badge.dusuk { background: #0d2d1a; color: #4caf50; }
+
+        .chat-box {
+            display: flex;
+            flex-direction: column;
+            height: 420px;
+        }
+        .chat-messages {
+            flex: 1;
+            overflow-y: auto;
+            padding: 12px;
+            background: #060b14;
+            border-radius: 8px;
+            margin-bottom: 12px;
+            font-size: 13px;
+            line-height: 1.6;
+        }
+        .msg-user { color: #4fc3f7; margin-bottom: 8px; }
+        .msg-ai { color: #a5d6a7; margin-bottom: 12px; }
+        .chat-input { display: flex; gap: 8px; }
+        .chat-input input {
+            flex: 1;
+            background: #060b14;
+            border: 1px solid #1e3a5f;
+            border-radius: 6px;
+            padding: 10px;
+            color: #e0e6ff;
+            font-size: 13px;
+        }
+        button {
+            background: #1565c0;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            padding: 10px 16px;
+            cursor: pointer;
+            font-size: 13px;
+        }
+        button:hover { background: #1976d2; }
+        button.green { background: #2e7d32; }
+        button.green:hover { background: #388e3c; }
+
+        .report-box {
+            background: #060b14;
+            border-radius: 8px;
+            padding: 16px;
+            font-size: 13px;
+            line-height: 1.7;
+            white-space: pre-wrap;
+            max-height: 300px;
+            overflow-y: auto;
+            color: #a5d6a7;
+            margin-top: 12px;
+        }
+
+        .chart-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+            padding: 0 32px 24px;
+        }
+        canvas { max-height: 200px; }
+    </style>
+</head>
+<body>
+
+<header>
+    <h1>🛡️ CYBERPULSE AI</h1>
+    <div>
+        <span id="status">● CANLI</span>
+        <button onclick="refreshData()" style="margin-left:16px; padding:6px 14px; font-size:12px;">Yenile</button>
+    </div>
+</header>
+
+<!-- Üst istatistik kartları -->
+<div class="grid">
+    <div class="card">
+        <h3>Toplam Tehdit</h3>
+        <div class="value" id="total">-</div>
+    </div>
+    <div class="card">
+        <h3>Kritik</h3>
+        <div class="value red" id="critical">-</div>
+    </div>
+    <div class="card">
+        <h3>Anomali Tespiti</h3>
+        <div class="value yellow" id="anomaly">-</div>
+    </div>
+    <div class="card">
+        <h3>Anomali Oranı</h3>
+        <div class="value green" id="anomaly_rate">-</div>
+    </div>
+</div>
+
+<!-- Ana grid: tablo + chat -->
+<div class="main-grid">
+    <!-- Tehdit tablosu -->
+    <div class="card">
+        <h3 style="margin-bottom:12px;">🔴 Canlı Tehdit Listesi</h3>
+        <div style="overflow-x:auto; max-height:380px; overflow-y:auto;">
+            <table class="threat-table">
+                <thead>
+                    <tr>
+                        <th>IP Adresi</th>
+                        <th>Tür</th>
+                        <th>Kaynak</th>
+                        <th>Risk</th>
+                        <th>Durum</th>
+                    </tr>
+                </thead>
+                <tbody id="threat-body"></tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- AI Chat -->
+    <div class="card">
+        <h3 style="margin-bottom:12px;">🤖 AI Asistan</h3>
+        <div class="chat-box">
+            <div class="chat-messages" id="chat-messages">
+                <div class="msg-ai">Merhaba! Tehditler hakkında soru sorabilirsiniz.</div>
+            </div>
+            <div class="chat-input">
+                <input type="text" id="chat-input" placeholder="Soru sor..." onkeydown="if(event.key==='Enter') sendChat()">
+                <button onclick="sendChat()">Sor</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Grafikler -->
+<div class="chart-grid">
+    <div class="card">
+        <h3 style="margin-bottom:12px;">📊 Tehdit Türü Dağılımı</h3>
+        <canvas id="threatTypeChart"></canvas>
+    </div>
+    <div class="card">
+        <h3 style="margin-bottom:12px;">📈 Risk Seviyesi Dağılımı</h3>
+        <canvas id="riskChart"></canvas>
+    </div>
+</div>
+
+<!-- Rapor -->
+<div style="padding: 0 32px 32px;">
+    <div class="card">
+        <div style="display:flex; justify-content:space-between; align-items:center;">
+            <h3>📄 AI Tehdit Raporu</h3>
+            <button class="green" onclick="generateReport()">Rapor Üret</button>
+        </div>
+        <div class="report-box" id="report-box">Rapor üretmek için butona tıklayın...</div>
+    </div>
+</div>
+
+<script>
+let threatTypeChart, riskChart;
+
+async function loadData() {
+    const res = await fetch("/api/threats");
+    const data = await res.json();
+
+    // Kartlar
+    document.getElementById("total").textContent = data.metrics.total_analyzed || 0;
+    document.getElementById("critical").textContent = data.metrics.critical || 0;
+    document.getElementById("anomaly").textContent = data.metrics.anomalies_detected || 0;
+    document.getElementById("anomaly_rate").textContent = (data.metrics.anomaly_rate || 0) + "%";
+
+    // Tablo
+    const tbody = document.getElementById("threat-body");
+    tbody.innerHTML = "";
+    data.threats.forEach(t => {
+        const label = t.risk_label || "DUSUK";
+        const badgeClass = label.includes("KRITIK") ? "kritik" : label.includes("ORTA") ? "orta" : "dusuk";
+        tbody.innerHTML += `
+            <tr>
+                <td style="font-family:monospace; color:#4fc3f7;">${t.ip}</td>
+                <td>${t.threat_type}</td>
+                <td>${t.source}</td>
+                <td><span class="badge ${badgeClass}">${label}</span></td>
+                <td>${t.status}</td>
+            </tr>`;
+    });
+
+    // Tehdit türü grafiği
+    const types = data.stats.threat_types || {};
+    if (threatTypeChart) threatTypeChart.destroy();
+    threatTypeChart = new Chart(document.getElementById("threatTypeChart"), {
+        type: "doughnut",
+        data: {
+            labels: Object.keys(types),
+            datasets: [{ data: Object.values(types), backgroundColor: ["#ef5350","#ffb300","#4fc3f7","#7986cb","#4caf50"] }]
+        },
+        options: { plugins: { legend: { labels: { color: "#e0e6ff" } } } }
+    });
+
+    // Risk grafiği
+    if (riskChart) riskChart.destroy();
+    riskChart = new Chart(document.getElementById("riskChart"), {
+        type: "bar",
+        data: {
+            labels: ["Kritik", "Orta", "Dusuk"],
+            datasets: [{
+                data: [data.metrics.critical, data.metrics.medium, data.metrics.low],
+                backgroundColor: ["#ef5350", "#ffb300", "#4caf50"]
+            }]
+        },
+        options: {
+            plugins: { legend: { display: false } },
+            scales: {
+                x: { ticks: { color: "#7986cb" }, grid: { color: "#1e3a5f" } },
+                y: { ticks: { color: "#7986cb" }, grid: { color: "#1e3a5f" } }
+            }
+        }
+    });
+}
+
+async function refreshData() {
+    await fetch("/api/refresh");
+    await loadData();
+}
+
+async function sendChat() {
+    const input = document.getElementById("chat-input");
+    const question = input.value.trim();
+    if (!question) return;
+
+    const messages = document.getElementById("chat-messages");
+    messages.innerHTML += `<div class="msg-user">Sen: ${question}</div>`;
+    input.value = "";
+
+    const res = await fetch("/api/chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ question })
+    });
+    const data = await res.json();
+    messages.innerHTML += `<div class="msg-ai">AI: ${data.response}</div>`;
+    messages.scrollTop = messages.scrollHeight;
+}
+
+async function generateReport() {
+    const box = document.getElementById("report-box");
+    box.textContent = "Rapor üretiliyor...";
+    const res = await fetch("/api/report", { method: "POST" });
+    const data = await res.json();
+    box.textContent = data.report;
+}
+
+loadData();
+</script>
+</body>
+</html>
